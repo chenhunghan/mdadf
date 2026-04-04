@@ -3,21 +3,30 @@
  */
 
 /**
+ * Split markdown into alternating [outside, fence, outside, fence, ...] segments.
+ * Even indices are prose, odd indices are fenced code blocks (preserved verbatim).
+ */
+function splitCodeFences(md: string): string[] {
+	return md.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~)/gm);
+}
+
+/**
+ * Apply a transform only to prose segments (outside fenced code blocks).
+ */
+function transformOutsideCodeFences(md: string, fn: (prose: string) => string): string {
+	const parts = splitCodeFences(md);
+	return parts.map((part, i) => (i % 2 === 0 ? fn(part) : part)).join("");
+}
+
+/**
  * Flatten nested blockquotes (>> text) to single-level (> text).
  * ADF doesn't support nested blockquotes, and Atlaskit produces empty output for them.
  *
- * Code-fence aware: splits on fenced code blocks first to avoid corrupting
- * content like shell heredocs (>>) inside code.
+ * Code-fence aware: only transforms prose sections.
+ * Handles optional leading indentation (up to 3 spaces per Markdown spec).
  */
 export function flattenNestedBlockquotes(md: string): string {
-	// Split on fenced code blocks (``` or ~~~), preserving them
-	const parts = md.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~)/gm);
-	return parts
-		.map((part, i) =>
-			// Even indices are outside code fences, odd indices are code blocks
-			i % 2 === 0 ? part.replace(/^(>{2,})\s?/gm, "> ") : part,
-		)
-		.join("");
+	return transformOutsideCodeFences(md, (prose) => prose.replace(/^(\s{0,3})(>{2,})\s?/gm, "$1> "));
 }
 
 /**
@@ -31,6 +40,8 @@ export function flattenNestedBlockquotes(md: string): string {
  * the link URL in an ordered array. Post-processing matches by image URL
  * and occurrence order to avoid collisions when the same image URL
  * appears with different link targets.
+ *
+ * Code-fence aware: only transforms prose sections.
  */
 export interface LinkedImage {
 	imgUrl: string;
@@ -63,12 +74,11 @@ export function extractLinkedImages(md: string): {
 	linkedImages: LinkedImage[];
 } {
 	const linkedImages: LinkedImage[] = [];
-	const processed = md.replace(
-		LINKED_IMAGE_RE,
-		(_match, _alt: string, imgUrl: string, linkUrl: string) => {
+	const processed = transformOutsideCodeFences(md, (prose) =>
+		prose.replace(LINKED_IMAGE_RE, (_match, _alt: string, imgUrl: string, linkUrl: string) => {
 			linkedImages.push({ imgUrl: encodeParensInUrl(imgUrl), linkUrl });
 			return `![${_alt}](${encodeParensInUrl(imgUrl)})`;
-		},
+		}),
 	);
 	return { processed, linkedImages };
 }

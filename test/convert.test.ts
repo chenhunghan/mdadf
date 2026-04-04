@@ -306,18 +306,11 @@ describe("task list edge cases", () => {
 		expect(adf.type).toBe("doc");
 	});
 
-	test("task item with nested child list drops nested content (ADF spec limitation)", () => {
+	test("task item with nested child list falls back to bulletList to preserve content", () => {
 		const md = "- [x] Parent task\n  - Nested child\n- [ ] Second task";
 		const adf = convertAndValidate(md) as any;
-		expect(adf.content[0].type).toBe("taskList");
-		const parentItem = adf.content[0].content[0];
-		expect(parentItem.attrs.state).toBe("DONE");
-		expect(parentItem.content[0].text).toBe("Parent task");
-		// taskItem only allows inline content per ADF schema — nested blocks are dropped
-		const hasBlockNode = parentItem.content.some(
-			(n: any) => n.type === "bulletList" || n.type === "orderedList",
-		);
-		expect(hasBlockNode).toBe(false);
+		// Falls back to bulletList because taskItem cannot hold nested blocks
+		expect(adf.content[0].type).toBe("bulletList");
 	});
 });
 
@@ -386,5 +379,67 @@ const x = 1;
 
 		const adf = convertAndValidate(md);
 		expect(adf).toBeDefined();
+	});
+});
+
+// ── Regression: XSS via linked image href ─────────────────────────
+
+describe("linked image URL scheme validation (regression)", () => {
+	test("javascript: URL is rejected", () => {
+		const md = "[![xss](https://img.example.com/a.png)](javascript:alert(1))";
+		const adf = convertAndValidate(md) as any;
+		const node = adf.content[0];
+		expect(node.type).toBe("mediaSingle");
+		// Should NOT have a link mark with javascript: scheme
+		const linkMark = node.marks?.find((m: any) => m.type === "link");
+		expect(linkMark).toBeUndefined();
+	});
+
+	test("data: URL is rejected", () => {
+		const md = "[![xss](https://img.example.com/a.png)](data:text/html,<script>alert(1)</script>)";
+		const adf = convertAndValidate(md) as any;
+		const linkMark = adf.content[0].marks?.find((m: any) => m.type === "link");
+		expect(linkMark).toBeUndefined();
+	});
+
+	test("https: URL is allowed", () => {
+		const md = "[![alt](https://img.example.com/a.png)](https://example.com)";
+		const adf = convertAndValidate(md) as any;
+		expect(adf.content[0].marks[0].attrs.href).toBe("https://example.com");
+	});
+
+	test("http: URL is allowed", () => {
+		const md = "[![alt](https://img.example.com/a.png)](http://example.com)";
+		const adf = convertAndValidate(md) as any;
+		expect(adf.content[0].marks[0].attrs.href).toBe("http://example.com");
+	});
+});
+
+// ── Regression: linked image in code fence ────────────────────────
+
+describe("linked image inside code fence (regression)", () => {
+	test("linked image syntax inside code fence is preserved verbatim", () => {
+		const md = "```md\n[![alt](img.png)](link)\n```";
+		const adf = convertAndValidate(md) as any;
+		expect(adf.content[0].type).toBe("codeBlock");
+		expect(adf.content[0].content[0].text).toContain("[![alt](img.png)](link)");
+	});
+});
+
+// ── Regression: indented nested blockquotes ───────────────────────
+
+describe("indented nested blockquotes (regression)", () => {
+	test("indented >> is flattened", () => {
+		const md = "  >> indented nested quote";
+		const adf = convertAndValidate(md) as any;
+		expect(adf.content[0].type).toBe("blockquote");
+		expect(adf.content[0].content.length).toBeGreaterThan(0);
+	});
+
+	test("3-space indented >>> is flattened", () => {
+		const md = "   >>> deeply indented";
+		const adf = convertAndValidate(md) as any;
+		expect(adf.content[0].type).toBe("blockquote");
+		expect(adf.content[0].content.length).toBeGreaterThan(0);
 	});
 });

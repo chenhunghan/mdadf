@@ -64,6 +64,12 @@ function convertBulletListToTaskList(node: AdfNode): AdfNode {
 	const allTasks = taskStates.every((s) => s.isTask);
 	if (!allTasks) return node;
 
+	// taskItem can only hold inline content per ADF spec.
+	// If any item has nested blocks (lists, extra paragraphs), fall back to
+	// bulletList to avoid silent data loss.
+	const hasNestedBlocks = node.content.some((listItem) => (listItem.content?.length ?? 0) > 1);
+	if (hasNestedBlocks) return node;
+
 	// Convert to taskList
 	const taskItems: AdfNode[] = node.content.map((listItem, idx) => {
 		const state = taskStates[idx];
@@ -80,8 +86,6 @@ function convertBulletListToTaskList(node: AdfNode): AdfNode {
 			newParaContent.shift();
 		}
 
-		// taskItem can only hold inline content per ADF spec.
-		// Nested lists/blocks from the listItem are dropped (ADF limitation).
 		return {
 			type: "taskItem",
 			attrs: {
@@ -101,9 +105,13 @@ function convertBulletListToTaskList(node: AdfNode): AdfNode {
 	};
 }
 
+const SAFE_URL_RE = /^https?:\/\//i;
+
 /**
  * Attach link marks to mediaSingle nodes whose media URL matches a linked image.
  * Uses occurrence-order matching to handle duplicate image URLs correctly.
+ * Rejects unsafe URL schemes (javascript:, data:, vbscript:, etc.) to prevent
+ * XSS via the custom linked-image path that bypasses Atlaskit's URL filtering.
  */
 function applyLinkedImages(node: AdfNode, tracker: LinkedImageTracker): AdfNode {
 	if (node.type === "mediaSingle" && node.content?.length && node.content[0]?.type === "media") {
@@ -111,7 +119,7 @@ function applyLinkedImages(node: AdfNode, tracker: LinkedImageTracker): AdfNode 
 		const imgUrl = media.attrs?.url as string | undefined;
 		if (imgUrl) {
 			const linkUrl = tracker.consumeNext(imgUrl);
-			if (linkUrl) {
+			if (linkUrl && SAFE_URL_RE.test(linkUrl)) {
 				return {
 					...node,
 					marks: [
