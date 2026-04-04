@@ -29,6 +29,7 @@ jobs:
     if: needs.release-please.outputs.release_created
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - target: bun-darwin-arm64
@@ -45,9 +46,6 @@ jobs:
             archive: tar.gz
           - target: bun-windows-x64
             artifact: mdadf-windows-x64
-            archive: zip
-          - target: bun-windows-arm64
-            artifact: mdadf-windows-arm64
             archive: zip
     steps:
       - uses: actions/checkout@v6.0.2
