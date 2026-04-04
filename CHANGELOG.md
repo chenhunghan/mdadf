@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.1.4](https://github.com/chenhunghan/mdadf/compare/mdadf-v0.1.3...mdadf-v0.1.4) (2026-04-04)
+
+
+### Features
+
+* add install scripts for all platforms with checksum verification ([f2a25af](https://github.com/chenhunghan/mdadf/commit/f2a25af6df01c571c9389243ee16afbb9bea7fde))
+* add mdadf-cli agent skill with evals and install docs ([22d1ee1](https://github.com/chenhunghan/mdadf/commit/22d1ee18acb38e269e810539e26dfe6e0f799a2b))
+
+
+### Bug Fixes
+
+* abort on missing checksum tool, use exact filename match in checksum lookup ([ba1e336](https://github.com/chenhunghan/mdadf/commit/ba1e3367af7d1182946acf2df6b69af22b5d704d))
+* exit immediately when stdin is a TTY with no input ([f01f9e6](https://github.com/chenhunghan/mdadf/commit/f01f9e65cae73de5a45241cac4ac2b4cf05030ca))
+* reject multiple file args, add CLI E2E tests for coverage gaps ([ac7c08e](https://github.com/chenhunghan/mdadf/commit/ac7c08e2bcace37072e5a55663674e74d6c93c63))
+
+
+### Documentation
+
+* add README with install and usage instructions ([3af69ea](https://github.com/chenhunghan/mdadf/commit/3af69eaad50314033f52433fe67738681147860f))
+* simplify agent skill install instructions ([dd29c78](https://github.com/chenhunghan/mdadf/commit/dd29c789a537f902fff5c91d711d0f2b0840268e))
+
+
+### Miscellaneous
+
+* remove .omx from tracking, add to gitignore ([73a5bcf](https://github.com/chenhunghan/mdadf/commit/73a5bcf0497ff32c58a314dda347a9c24c864c9e))
+
 ## [0.1.3](https://github.com/chenhunghan/mdadf/compare/mdadf-v0.1.2...mdadf-v0.1.3) (2026-04-04)
 
 
