@@ -1,6 +1,6 @@
 # mdadf
 
-Convert Markdown to [Atlassian Document Format (ADF)](https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/). Uses Atlassian's official `@atlaskit/editor-markdown-transformer` under the hood.
+Convert Markdown to [Atlassian Document Format (ADF)](https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/). Uses Atlassian's official [@atlaskit/editor-markdown-transformer](https://atlaskit.atlassian.com/packages/editor/editor-markdown-transformer) under the hood.
 
 ## Install
 
@@ -27,10 +27,8 @@ bun install && bun run build
 Install the `mdadf-cli` skill with [`npx skills`](https://github.com/vercel-labs/skills):
 
 ```sh
-npx skills add chenhunghan/mdadf --skill mdadf-cli -g -a codex -a claude-code -y
+npx skills add chenhunghan/mdadf
 ```
-
-Omit `-g` for project-local install, and change `-a` flags for other supported agents.
 
 ## Usage
 
