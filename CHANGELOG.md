@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/chenhunghan/mdadf/compare/mdadf-v0.1.1...mdadf-v0.1.2) (2026-04-04)
+
+
+### Bug Fixes
+
+* address P1/P2 security and correctness findings ([0bd4be9](https://github.com/chenhunghan/mdadf/commit/0bd4be9f512399803d78acc5a7f0ef4ea12eb414))
+
 ## [0.1.1](https://github.com/chenhunghan/mdadf/compare/mdadf-v0.1.0...mdadf-v0.1.1) (2026-04-04)
 
 
