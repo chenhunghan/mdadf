@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.3](https://github.com/chenhunghan/mdadf/compare/mdadf-v0.1.2...mdadf-v0.1.3) (2026-04-04)
+
+
+### Bug Fixes
+
+* bump bun to 1.3.10 for windows-arm64 compile support, restore all 6 targets ([7032918](https://github.com/chenhunghan/mdadf/commit/7032918366022a95aba297da72b13a168d7e2361))
+* remove unsupported bun-windows-arm64 target, add fail-fast: false ([65bf2f1](https://github.com/chenhunghan/mdadf/commit/65bf2f188061171f58e48b37a19d226b56017c36))
+
 ## [0.1.2](https://github.com/chenhunghan/mdadf/compare/mdadf-v0.1.1...mdadf-v0.1.2) (2026-04-04)
 
 
