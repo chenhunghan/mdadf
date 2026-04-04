@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { unlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "../src/index";
@@ -110,8 +110,20 @@ describe("CLI --help and --version", () => {
 		expect(stdout).toContain("mdadf");
 	});
 
+	test("-h prints usage and exits 0", async () => {
+		const { stdout, exitCode } = await run(["-h"]);
+		expect(exitCode).toBe(0);
+		expect(stdout).toContain("Usage:");
+	});
+
 	test("--version prints version and exits 0", async () => {
 		const { stdout, exitCode } = await run(["--version"]);
+		expect(exitCode).toBe(0);
+		expect(stdout.trim()).toMatch(/^\d+\.\d+\.\d+$/);
+	});
+
+	test("-v prints version and exits 0", async () => {
+		const { stdout, exitCode } = await run(["-v"]);
 		expect(exitCode).toBe(0);
 		expect(stdout.trim()).toMatch(/^\d+\.\d+\.\d+$/);
 	});
@@ -144,5 +156,94 @@ describe("CLI error handling", () => {
 		const { stderr, exitCode } = await run(["--output"]);
 		expect(exitCode).toBe(1);
 		expect(stderr).toContain("--output requires a file path");
+	});
+
+	test("multiple file arguments shows clean error", async () => {
+		const { stderr, exitCode } = await run(["a.md", "b.md"]);
+		expect(exitCode).toBe(1);
+		expect(stderr).toContain("expected one file argument, got multiple");
+	});
+
+	test("permission denied shows clean error", async () => {
+		const noRead = join(tmpdir(), `mdadf-noperm-${Date.now()}.md`);
+		writeFileSync(noRead, "# secret");
+		chmodSync(noRead, 0o000);
+		try {
+			const { stderr, exitCode } = await run([noRead]);
+			expect(exitCode).toBe(1);
+			expect(stderr).toContain("permission denied");
+		} finally {
+			chmodSync(noRead, 0o644);
+			unlinkSync(noRead);
+		}
+	});
+
+	test("output write failure shows clean error", async () => {
+		const badPath = join(tmpdir(), `no-such-dir-${Date.now()}`, "out.json");
+		const { stderr, exitCode } = await run(["-o", badPath], "# Hello");
+		expect(exitCode).toBe(1);
+		expect(stderr).toContain("could not write to");
+	});
+});
+
+// ── CLI combined flags E2E ───────────────────────────────────────
+
+describe("CLI combined flags", () => {
+	const tmpMd = join(tmpdir(), `mdadf-combo-${Date.now()}.md`);
+	const tmpOut = join(tmpdir(), `mdadf-combo-out-${Date.now()}.json`);
+
+	test("file + --compact", async () => {
+		writeFileSync(tmpMd, "# Compact from file");
+		const { stdout, exitCode } = await run(["--compact", tmpMd]);
+		expect(exitCode).toBe(0);
+		expect(stdout.trim()).not.toContain("\n");
+		const adf = JSON.parse(stdout);
+		expect(adf.content[0].type).toBe("heading");
+		unlinkSync(tmpMd);
+	});
+
+	test("file + --output", async () => {
+		writeFileSync(tmpMd, "# File to output");
+		const { stdout, exitCode } = await run([tmpMd, "-o", tmpOut]);
+		expect(exitCode).toBe(0);
+		expect(stdout).toBe("");
+		const content = await Bun.file(tmpOut).text();
+		const adf = JSON.parse(content);
+		expect(adf.content[0].type).toBe("heading");
+		unlinkSync(tmpMd);
+		unlinkSync(tmpOut);
+	});
+
+	test("file + --compact + --output", async () => {
+		writeFileSync(tmpMd, "# All flags");
+		const { stdout, exitCode } = await run(["--compact", "-o", tmpOut, tmpMd]);
+		expect(exitCode).toBe(0);
+		expect(stdout).toBe("");
+		const content = await Bun.file(tmpOut).text();
+		expect(content.trim()).not.toContain("\n");
+		const adf = JSON.parse(content);
+		expect(adf.content[0].type).toBe("heading");
+		unlinkSync(tmpMd);
+		unlinkSync(tmpOut);
+	});
+});
+
+// ── CLI output formatting ────────────────────────────────────────
+
+describe("CLI output formatting", () => {
+	test("default output is pretty-printed with trailing newline", async () => {
+		const { stdout, exitCode } = await run([], "# Hello");
+		expect(exitCode).toBe(0);
+		// Pretty-printed JSON has newlines and indentation
+		expect(stdout).toContain("\n  ");
+		// POSIX trailing newline
+		expect(stdout.endsWith("\n")).toBe(true);
+	});
+
+	test("--compact output has trailing newline", async () => {
+		const { stdout, exitCode } = await run(["--compact"], "# Hello");
+		expect(exitCode).toBe(0);
+		// Single line of JSON followed by one newline
+		expect(stdout).toMatch(/^\{.*\}\n$/);
 	});
 });

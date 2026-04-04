@@ -67,6 +67,10 @@ export function parseArgs(args: string[]): {
 					process.stderr.write(`Error: unknown option '${arg}'\n`);
 					process.exit(1);
 				}
+				if (file) {
+					process.stderr.write(`Error: expected one file argument, got multiple\n`);
+					process.exit(1);
+				}
 				file = arg;
 		}
 	}
