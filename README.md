@@ -2,6 +2,8 @@
 
 Convert Markdown to [Atlassian Document Format (ADF)](https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/). Uses Atlassian's official [@atlaskit/editor-markdown-transformer](https://atlaskit.atlassian.com/packages/editor/editor-markdown-transformer) under the hood.
 
+Developed for [Jira Skill](https://github.com/chenhunghan/jira-skill) but can be used alone.
+
 ## Install
 
 **macOS / Linux:**
