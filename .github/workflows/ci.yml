@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: Lint, Format, Typecheck & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - name: Lint (oxlint)
+        run: bun run lint
+
+      - name: Format check (oxfmt)
+        run: oxfmt --check src/
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Test
+        run: bun test
