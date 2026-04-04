@@ -22,6 +22,34 @@ irm https://raw.githubusercontent.com/chenhunghan/mdadf/main/install.ps1 | iex
 bun install && bun run build
 ```
 
+## Install the Agent Skill
+
+This repo also ships an `mdadf-cli` skill for agent runtimes such as Codex and Claude Code, using the [`npx skills`](https://github.com/vercel-labs/skills) installer.
+
+List the skills available in this repo:
+
+```sh
+npx skills add chenhunghan/mdadf --list
+```
+
+Install `mdadf-cli` globally for Codex and Claude Code:
+
+```sh
+npx skills add chenhunghan/mdadf --skill mdadf-cli -g -a codex -a claude-code -y
+```
+
+Install directly from the skill path instead of the whole repo:
+
+```sh
+npx skills add https://github.com/chenhunghan/mdadf/tree/main/skills/mdadf-cli -g -a codex -a claude-code -y
+```
+
+Notes:
+
+- Omit `-g` to install into the current project instead of your user-wide agent config.
+- Add or replace `-a` flags for other supported agents.
+- Run `npx skills check` and `npx skills update` later to check for skill updates.
+
 ## Usage
 
 ```sh

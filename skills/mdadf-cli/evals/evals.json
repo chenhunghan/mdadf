@@ -1,0 +1,41 @@
+{
+	"skill_name": "mdadf-cli",
+	"evals": [
+		{
+			"id": 1,
+			"prompt": "I am on macOS and need `mdadf` installed without using sudo. Then convert `/tmp/release-notes.md` to Atlassian ADF JSON and keep the output compact unless it is too large for chat.",
+			"expected_output": "Uses a user-local macOS install flow, verifies the binary, and converts the file with `--compact`, preferring a file output path if the JSON would be noisy.",
+			"files": []
+		},
+		{
+			"id": 2,
+			"prompt": "On this Windows PowerShell machine, convert `C:\\Users\\me\\Downloads\\issue.md` into compact Jira ADF JSON. If `mdadf` is not installed yet, set it up first and then do the conversion.",
+			"expected_output": "Centers the Markdown-to-ADF request, checks whether `mdadf` is available, installs it on Windows only if missing, verifies the executable, and runs the conversion with `--compact`.",
+			"files": []
+		},
+		{
+			"id": 3,
+			"prompt": "Please convert this Markdown to Atlassian ADF for me and do not waste tokens: `# Deploy\\n\\n- ship it\\n- monitor it`",
+			"expected_output": "Uses stdin or another minimal-shell approach and returns compact ADF JSON rather than pretty-printed output.",
+			"files": []
+		},
+		{
+			"id": 4,
+			"prompt": "`mdadf` is already installed on this Linux machine. Convert `./docs/incident.md` to compact Jira issue body JSON and do not reinstall anything unless the existing binary is broken.",
+			"expected_output": "Checks the existing binary, skips install on the healthy path, and converts the file with `--compact`.",
+			"files": []
+		},
+		{
+			"id": 6,
+			"prompt": "Take `./handoff.md`, convert it to Confluence body JSON, and save the result to `./handoff.adf.json` instead of printing the whole payload in chat.",
+			"expected_output": "Triggers on an implicit Confluence-body request, uses `mdadf` with compact output, and writes the result via `-o` to the requested file path.",
+			"files": []
+		},
+		{
+			"id": 7,
+			"prompt": "I need an Atlassian document payload for `/tmp/meeting-notes.md` so I can paste it into a Jira API request. Keep it compact and use the tool if it is available.",
+			"expected_output": "Triggers without the user naming `mdadf`, checks whether the CLI exists, installs only if needed, and produces compact ADF output suitable for Jira APIs.",
+			"files": []
+		}
+	]
+}

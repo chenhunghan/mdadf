@@ -1,0 +1,42 @@
+[
+  {
+    "query": "Turn `/tmp/retro.md` into Jira issue body JSON and keep it compact so I can paste it into the REST API request.",
+    "should_trigger": true
+  },
+  {
+    "query": "I have Markdown meeting notes in `notes/release.md`. Please make Confluence body JSON from them without hand-writing the payload.",
+    "should_trigger": true
+  },
+  {
+    "query": "Convert this markdown checklist into Atlassian ADF for me: `# Launch\\n\\n- verify\\n- ship\\n- monitor`",
+    "should_trigger": true
+  },
+  {
+    "query": "Need an Atlassian document payload from `README.md` for a Jira API call. Compact JSON is fine.",
+    "should_trigger": true
+  },
+  {
+    "query": "Install mdadf on this Windows PowerShell machine and then use it to convert `C:\\Users\\me\\Downloads\\issue.md` into Jira ADF JSON.",
+    "should_trigger": true
+  },
+  {
+    "query": "Convert `README.md` from Markdown to HTML and keep the formatting clean.",
+    "should_trigger": false
+  },
+  {
+    "query": "Render this markdown file in the terminal so I can preview it before sending it.",
+    "should_trigger": false
+  },
+  {
+    "query": "I already have Jira issue body JSON. Explain what each field means and summarize the content in plain English.",
+    "should_trigger": false
+  },
+  {
+    "query": "Rewrite these release notes in better Markdown for Confluence, but do not turn them into JSON yet.",
+    "should_trigger": false
+  },
+  {
+    "query": "Convert this Markdown snippet into Slack mrkdwn, not Atlassian ADF.",
+    "should_trigger": false
+  }
+]
