@@ -16,7 +16,7 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v4.4.0
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -50,11 +50,11 @@ jobs:
             artifact: mdadf-windows-arm64
             archive: zip
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@v2.2.0
         with:
-          bun-version: latest
+          bun-version: "1.3.5"
 
       - run: bun install --frozen-lockfile
 
@@ -78,3 +78,26 @@ jobs:
           else
             gh release upload ${{ needs.release-please.outputs.tag_name }} ${{ matrix.artifact }}.zip
           fi
+
+  checksums:
+    name: Generate checksums
+    needs: [release-please, build]
+    if: needs.release-please.outputs.release_created
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release download ${{ needs.release-please.outputs.tag_name }} --dir assets/
+
+      - name: Generate SHA256 checksums
+        working-directory: assets
+        run: sha256sum * > checksums.txt
+
+      - name: Upload checksums
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload ${{ needs.release-please.outputs.tag_name }} assets/checksums.txt

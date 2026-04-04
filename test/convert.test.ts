@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import Ajv2020 from "ajv/dist/2020";
 import Ajv04 from "ajv-draft-04";
 import { readFileSync } from "node:fs";
 import { convert } from "../src/index";
@@ -255,11 +254,103 @@ describe("nested blockquotes (patched)", () => {
 	});
 });
 
+// ── Regression: code block preservation ───────────────────────────
+
+describe("code block with >> (regression)", () => {
+	test(">> inside fenced code block is not corrupted", () => {
+		const md = "```bash\ncat <<'EOF' >> output.txt\nsome text\nEOF\n```";
+		const adf = convertAndValidate(md) as any;
+		expect(adf.content[0].type).toBe("codeBlock");
+		expect(adf.content[0].content[0].text).toContain(">>");
+	});
+
+	test(">> outside code block is flattened, inside is preserved", () => {
+		const md = ">> nested quote\n\n```\n>> not a quote\n```";
+		const adf = convertAndValidate(md) as any;
+		expect(adf.content[0].type).toBe("blockquote");
+		expect(adf.content[1].type).toBe("codeBlock");
+		expect(adf.content[1].content[0].text).toContain(">>");
+	});
+});
+
+// ── Regression: duplicate image URLs ──────────────────────────────
+
+describe("duplicate linked images (regression)", () => {
+	test("same image URL with different link targets", () => {
+		const md =
+			"[![a](https://img.example.com/same.png)](https://link1.com)\n\n[![b](https://img.example.com/same.png)](https://link2.com)";
+		const adf = convertAndValidate(md) as any;
+		const first = adf.content[0];
+		const second = adf.content[1];
+		expect(first.type).toBe("mediaSingle");
+		expect(second.type).toBe("mediaSingle");
+		expect(first.marks[0].attrs.href).toBe("https://link1.com");
+		expect(second.marks[0].attrs.href).toBe("https://link2.com");
+	});
+});
+
+// ── Regression: task list edge cases ──────────────────────────────
+
+describe("task list edge cases", () => {
+	test("ordered list with task syntax stays as orderedList", () => {
+		const md = "1. [x] Done\n2. [ ] Todo";
+		const adf = convertAndValidate(md) as any;
+		expect(adf.content[0].type).toBe("orderedList");
+	});
+
+	test("task item with only checkbox and no text", () => {
+		// "- [x] " with trailing space — checkbox prefix stripped, remaining content may be empty
+		const md = "- [x] \n- [ ] Something";
+		const adf = convertAndValidate(md) as any;
+		// Should still be a valid ADF doc (either taskList or bulletList)
+		expect(adf.type).toBe("doc");
+	});
+
+	test("task item with nested child list drops nested content (ADF spec limitation)", () => {
+		const md = "- [x] Parent task\n  - Nested child\n- [ ] Second task";
+		const adf = convertAndValidate(md) as any;
+		expect(adf.content[0].type).toBe("taskList");
+		const parentItem = adf.content[0].content[0];
+		expect(parentItem.attrs.state).toBe("DONE");
+		expect(parentItem.content[0].text).toBe("Parent task");
+		// taskItem only allows inline content per ADF schema — nested blocks are dropped
+		const hasBlockNode = parentItem.content.some(
+			(n: any) => n.type === "bulletList" || n.type === "orderedList",
+		);
+		expect(hasBlockNode).toBe(false);
+	});
+});
+
+// ── Regression: linked images with parens in URLs ─────────────────
+
+describe("linked images with parens in URLs (regression)", () => {
+	test("parentheses in image URL are percent-encoded", () => {
+		const md = "[![alt](https://example.com/a_(1).png)](https://dest.com)";
+		const adf = convertAndValidate(md) as any;
+		const node = adf.content[0];
+		expect(node.type).toBe("mediaSingle");
+		expect(node.content[0].attrs.url).toBe("https://example.com/a_%281%29.png");
+		expect(node.marks[0].attrs.href).toBe("https://dest.com");
+	});
+
+	test("parentheses in link URL are preserved", () => {
+		const md = "[![alt](https://img.example.com/a.png)](https://dest.com?q=(x))";
+		const adf = convertAndValidate(md) as any;
+		expect(adf.content[0].marks[0].attrs.href).toBe("https://dest.com?q=(x)");
+	});
+});
+
 // ── Edge cases ────────────────────────────────────────────────────
 
 describe("edge cases", () => {
 	test("empty input produces valid doc", () => {
 		const adf = convertAndValidate("") as any;
+		expect(adf.version).toBe(1);
+		expect(adf.type).toBe("doc");
+	});
+
+	test("whitespace only input", () => {
+		const adf = convertAndValidate("   \n\n  ") as any;
 		expect(adf.version).toBe(1);
 		expect(adf.type).toBe("doc");
 	});

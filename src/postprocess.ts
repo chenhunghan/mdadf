@@ -3,6 +3,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import type { LinkedImage } from "./preprocess";
 
 // ADF node types used in postprocessing
 interface AdfNode {
@@ -79,7 +80,8 @@ function convertBulletListToTaskList(node: AdfNode): AdfNode {
 			newParaContent.shift();
 		}
 
-		// taskItem holds inline content directly (not wrapped in paragraph)
+		// taskItem can only hold inline content per ADF spec.
+		// Nested lists/blocks from the listItem are dropped (ADF limitation).
 		return {
 			type: "taskItem",
 			attrs: {
@@ -101,39 +103,65 @@ function convertBulletListToTaskList(node: AdfNode): AdfNode {
 
 /**
  * Attach link marks to mediaSingle nodes whose media URL matches a linked image.
+ * Uses occurrence-order matching to handle duplicate image URLs correctly.
  */
-function applyLinkedImages(node: AdfNode, linkedImages: Map<string, string>): AdfNode {
+function applyLinkedImages(node: AdfNode, tracker: LinkedImageTracker): AdfNode {
 	if (node.type === "mediaSingle" && node.content?.length && node.content[0]?.type === "media") {
 		const media = node.content[0];
 		const imgUrl = media.attrs?.url as string | undefined;
-		if (imgUrl && linkedImages.has(imgUrl)) {
-			const linkUrl = linkedImages.get(imgUrl)!;
-			return {
-				...node,
-				marks: [
-					...(node.marks || []),
-					{
-						type: "link",
-						attrs: { href: linkUrl },
-					},
-				],
-			};
+		if (imgUrl) {
+			const linkUrl = tracker.consumeNext(imgUrl);
+			if (linkUrl) {
+				return {
+					...node,
+					marks: [
+						...(node.marks || []),
+						{
+							type: "link",
+							attrs: { href: linkUrl },
+						},
+					],
+				};
+			}
 		}
 	}
 	return node;
 }
 
 /**
+ * Tracks linked images by URL with occurrence-order matching.
+ * Each call to consumeNext() returns the next link URL for that image URL,
+ * preventing collisions when the same image appears with different links.
+ */
+class LinkedImageTracker {
+	private urlQueues = new Map<string, string[]>();
+
+	constructor(linkedImages: LinkedImage[]) {
+		for (const { imgUrl, linkUrl } of linkedImages) {
+			const queue = this.urlQueues.get(imgUrl) || [];
+			queue.push(linkUrl);
+			this.urlQueues.set(imgUrl, queue);
+		}
+	}
+
+	consumeNext(imgUrl: string): string | undefined {
+		const queue = this.urlQueues.get(imgUrl);
+		if (!queue?.length) return undefined;
+		return queue.shift();
+	}
+}
+
+/**
  * Recursively walk and transform the ADF tree.
  */
-function walkNodes(nodes: AdfNode[], linkedImages: Map<string, string>): AdfNode[] {
+function walkNodes(nodes: AdfNode[], tracker: LinkedImageTracker): AdfNode[] {
 	return nodes.map((node) => {
 		// First, recurse into children
 		let transformed = node;
 		if (transformed.content?.length) {
 			transformed = {
 				...transformed,
-				content: walkNodes(transformed.content, linkedImages),
+				content: walkNodes(transformed.content, tracker),
 			};
 		}
 
@@ -141,7 +169,7 @@ function walkNodes(nodes: AdfNode[], linkedImages: Map<string, string>): AdfNode
 		transformed = convertBulletListToTaskList(transformed);
 
 		// Apply linked images
-		transformed = applyLinkedImages(transformed, linkedImages);
+		transformed = applyLinkedImages(transformed, tracker);
 
 		return transformed;
 	});
@@ -150,9 +178,13 @@ function walkNodes(nodes: AdfNode[], linkedImages: Map<string, string>): AdfNode
 /**
  * Run all ADF postprocessing steps.
  */
-export function postprocessAdf(adf: AdfDoc, linkedImages: Map<string, string>): AdfDoc {
+export function postprocessAdf(adf: AdfDoc, linkedImages: LinkedImage[]): AdfDoc {
+	if (!adf.content) {
+		return { ...adf, content: [] };
+	}
+	const tracker = new LinkedImageTracker(linkedImages);
 	return {
 		...adf,
-		content: walkNodes(adf.content, linkedImages),
+		content: walkNodes(adf.content, tracker),
 	};
 }
