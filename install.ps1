@@ -39,7 +39,8 @@ try {
 
     # Verify checksum
     Info "verifying checksum..."
-    $Expected = (Get-Content "$TmpDir\checksums.txt" | Where-Object { $_ -match $Archive }) -replace '\s+.*', ''
+    # Exact match on filename to avoid substring collisions with .sig/.sbom sidecar files
+    $Expected = (Get-Content "$TmpDir\checksums.txt" | Where-Object { $_ -match "^\S+\s+$([regex]::Escape($Archive))$" }) -replace '\s+.*', ''
     if (-not $Expected) { Error "checksum not found for $Archive" }
 
     $Actual = (Get-FileHash "$TmpDir\$Archive" -Algorithm SHA256).Hash.ToLower()

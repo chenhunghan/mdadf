@@ -68,7 +68,8 @@ verify_checksum() {
   dir="$1"
   info "verifying checksum..."
 
-  expected="$(grep "${ARCHIVE}" "${dir}/checksums.txt" | awk '{print $1}')"
+  # Exact match on filename to avoid substring collisions with .sig/.sbom sidecar files
+  expected="$(awk -v f="${ARCHIVE}" '$2 == f {print $1}' "${dir}/checksums.txt")"
   [ -n "$expected" ] || error "checksum not found for ${ARCHIVE}"
 
   if command -v sha256sum >/dev/null 2>&1; then
@@ -76,8 +77,7 @@ verify_checksum() {
   elif command -v shasum >/dev/null 2>&1; then
     actual="$(shasum -a 256 "${dir}/${ARCHIVE}" | awk '{print $1}')"
   else
-    info "warning: sha256sum/shasum not found, skipping checksum verification"
-    return
+    error "sha256sum or shasum is required for checksum verification"
   fi
 
   [ "$expected" = "$actual" ] || error "checksum mismatch!\n  expected: ${expected}\n  actual:   ${actual}"
