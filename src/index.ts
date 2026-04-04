@@ -106,6 +106,12 @@ async function readInput(file?: string): Promise<string> {
 		}
 	}
 
+	// If stdin is a TTY (no pipe), there's nothing to read — bail early
+	if (process.stdin.isTTY) {
+		process.stderr.write("Error: no input (pipe markdown via stdin or pass a file argument)\n");
+		process.exit(1);
+	}
+
 	// Read from stdin — cross-platform via Bun API
 	const text = await Bun.stdin.text();
 	if (!text) {
