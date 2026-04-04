@@ -23,7 +23,7 @@ jobs:
         run: bun run lint
 
       - name: Format check (oxfmt)
-        run: oxfmt --check src/
+        run: bunx oxfmt --check src/
 
       - name: Typecheck
         run: bun run typecheck
