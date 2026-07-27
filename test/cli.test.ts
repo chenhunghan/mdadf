@@ -6,11 +6,16 @@ import { parseArgs } from "../src/index";
 
 const CLI = join(import.meta.dir, "../src/index.ts");
 
+// Run the source via bun by default. Set MDADF_BIN to a compiled binary to run
+// this same suite against a release artifact:
+//   MDADF_BIN=./mdadf bun test test/cli.test.ts
+const CMD: string[] = process.env.MDADF_BIN ? [process.env.MDADF_BIN] : ["bun", "run", CLI];
+
 async function run(
 	args: string[] = [],
 	stdin?: string,
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-	const proc = Bun.spawn(["bun", "run", CLI, ...args], {
+	const proc = Bun.spawn([...CMD, ...args], {
 		stdin: stdin != null ? new Blob([stdin]) : undefined,
 		stdout: "pipe",
 		stderr: "pipe",
