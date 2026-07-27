@@ -40,3 +40,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # skill eval workspaces
 *-workspace/
+
+# scriptc evaluation artifacts (experimental, not released)
+/mdadf-native
+/.scriptc-build/
+/entry.c
