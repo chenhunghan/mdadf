@@ -11,6 +11,8 @@
   "scripts": {
     "start": "bun run src/index.ts",
     "test": "bun test",
+    "test:bin": "MDADF_BIN=./mdadf bun test test/cli.test.ts",
+    "test:diff": "bun run test/differential.ts \"bun run src/index.ts\" ./mdadf",
     "build": "bun build src/index.ts --compile --outfile mdadf",
     "lint": "oxlint src/",
     "fmt": "oxfmt --write src/",

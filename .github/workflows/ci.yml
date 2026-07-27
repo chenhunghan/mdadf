@@ -39,3 +39,13 @@ jobs:
           echo '# Test' | ./mdadf --compact | jq .type
           echo '**bold**' | ./mdadf -o /tmp/out.json
           jq .type /tmp/out.json
+
+      # The CLI suite above runs against src via bun. Re-run it against the
+      # compiled artifact — that is what users actually download.
+      - name: CLI suite against binary
+        run: bun run test:bin
+
+      # Corpus differential: source and binary must agree on every input, and
+      # the binary's output must still validate against the ADF schema.
+      - name: Differential (source vs binary)
+        run: bun run test:diff
