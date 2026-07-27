@@ -69,16 +69,38 @@ function encodeParensInUrl(url: string): string {
 	return url.replace(/\(/g, "%28").replace(/\)/g, "%29");
 }
 
+/**
+ * Rewrite linked images in one prose segment, appending each to `linkedImages`.
+ *
+ * Uses matchAll and rebuilds the string by hand rather than passing a function
+ * to String.replace: we need a side effect per match, and function replacers are
+ * not portable across every compile target (notably scriptc, which supports only
+ * string replacement templates).
+ */
+function rewriteLinkedImages(prose: string, linkedImages: LinkedImage[]): string {
+	let result = "";
+	let lastIndex = 0;
+
+	for (const match of prose.matchAll(LINKED_IMAGE_RE)) {
+		const alt = match[1] ?? "";
+		const imgUrl = encodeParensInUrl(match[2] ?? "");
+		const linkUrl = match[3] ?? "";
+
+		linkedImages.push({ imgUrl, linkUrl });
+		result += prose.slice(lastIndex, match.index) + `![${alt}](${imgUrl})`;
+		lastIndex = match.index + match[0].length;
+	}
+
+	return result + prose.slice(lastIndex);
+}
+
 export function extractLinkedImages(md: string): {
 	processed: string;
 	linkedImages: LinkedImage[];
 } {
 	const linkedImages: LinkedImage[] = [];
 	const processed = transformOutsideCodeFences(md, (prose) =>
-		prose.replace(LINKED_IMAGE_RE, (_match, _alt: string, imgUrl: string, linkUrl: string) => {
-			linkedImages.push({ imgUrl: encodeParensInUrl(imgUrl), linkUrl });
-			return `![${_alt}](${encodeParensInUrl(imgUrl)})`;
-		}),
+		rewriteLinkedImages(prose, linkedImages),
 	);
 	return { processed, linkedImages };
 }

@@ -70,8 +70,11 @@ function convertBulletListToTaskList(node: AdfNode): AdfNode {
 	const hasNestedBlocks = node.content.some((listItem) => (listItem.content?.length ?? 0) > 1);
 	if (hasNestedBlocks) return node;
 
-	// Convert to taskList
-	const taskItems: AdfNode[] = node.content.map((listItem, idx) => {
+	// Convert to taskList.
+	// The mapped literal is annotated as AdfNode rather than inferred: some compile
+	// targets require record shapes to match the declared type exactly instead of
+	// coercing a wider inferred shape at the assignment.
+	const taskItems: AdfNode[] = node.content.map((listItem, idx): AdfNode => {
 		const state = taskStates[idx];
 		const para = listItem.content![0]!;
 		const firstText = para.content![0]!;
@@ -86,23 +89,16 @@ function convertBulletListToTaskList(node: AdfNode): AdfNode {
 			newParaContent.shift();
 		}
 
-		return {
-			type: "taskItem",
-			attrs: {
-				localId: randomUUID(),
-				state: state!.done ? "DONE" : "TODO",
-			},
-			content: newParaContent,
+		const attrs: Record<string, unknown> = {
+			localId: randomUUID(),
+			state: state!.done ? "DONE" : "TODO",
 		};
+
+		return { type: "taskItem", attrs, content: newParaContent };
 	});
 
-	return {
-		type: "taskList",
-		attrs: {
-			localId: randomUUID(),
-		},
-		content: taskItems,
-	};
+	const listAttrs: Record<string, unknown> = { localId: randomUUID() };
+	return { type: "taskList", attrs: listAttrs, content: taskItems };
 }
 
 const SAFE_URL_RE = /^https?:\/\//i;
@@ -116,7 +112,8 @@ const SAFE_URL_RE = /^https?:\/\//i;
 function applyLinkedImages(node: AdfNode, tracker: LinkedImageTracker): AdfNode {
 	if (node.type === "mediaSingle" && node.content?.length && node.content[0]?.type === "media") {
 		const media = node.content[0];
-		const imgUrl = media.attrs?.url as string | undefined;
+		const rawUrl = media.attrs?.url;
+		const imgUrl = typeof rawUrl === "string" ? rawUrl : undefined;
 		if (imgUrl) {
 			const linkUrl = tracker.consumeNext(imgUrl);
 			if (linkUrl && SAFE_URL_RE.test(linkUrl)) {
