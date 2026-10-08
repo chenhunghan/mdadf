@@ -1,6 +1,6 @@
 {
   "name": "mdadf",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Convert Markdown to Atlassian Document Format (ADF)",
   "module": "src/index.ts",
   "type": "module",
