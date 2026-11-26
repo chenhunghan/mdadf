@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.6](https://github.com/chenhunghan/mdadf/compare/mdadf-v0.1.5...mdadf-v0.1.6) (2026-11-26)
+
+
+### Bug Fixes
+
+* **deps:** bump bun to 1.3.14 and Atlaskit patch versions ([#10](https://github.com/chenhunghan/mdadf/issues/10)) ([acd3cbf](https://github.com/chenhunghan/mdadf/commit/acd3cbf0c8f518f926972ef074ff09f4e299ea6a))
+* **deps:** upgrade Atlaskit packages to latest majors ([#8](https://github.com/chenhunghan/mdadf/issues/8)) ([ae5235f](https://github.com/chenhunghan/mdadf/commit/ae5235f664ef6b0f9660d4c9fbc77ac5c6f40aa3))
+
 ## [0.1.5](https://github.com/chenhunghan/mdadf/compare/mdadf-v0.1.4...mdadf-v0.1.5) (2026-04-04)
 
 
